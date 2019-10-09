@@ -1,9 +1,12 @@
 package collect
 
 import (
+	"encoding/json"
 	"errors"
 	"github.com/axgle/mahonia"
 	"golang.org/x/net/html"
+	"io/ioutil"
+	"log"
 	"net/http"
 )
 
@@ -16,11 +19,26 @@ type Caption struct {
 	//
 	Url      string //对应的url
 	IndexUrl string //索引对应的地址
+
 }
 
 //保存
-func (this *Caption) Save() {
+func (this *Caption) Save(path string) {
+	data, err := json.Marshal(this)
+	if err == nil {
+		err = ioutil.WriteFile(path+"/"+this.Name+".rc", data, 0644)
+	}
 
+}
+
+//从文件加载数据
+func (this *Caption) Load(filename string) {
+	data, err := ioutil.ReadFile(filename)
+	if err != nil {
+		log.Println(err)
+	} else {
+		json.Unmarshal(data, this)
+	}
 }
 
 type Collecter interface {
@@ -30,11 +48,52 @@ type Collecter interface {
 
 //标准的爬虫
 type AbstractSpider struct {
+	CaptionPath string //配置文件的路径
+	WorkPath    string //抓取文件存储路径
 	captions    []*Caption
 	captionsMap map[string]*Caption
 }
 
-//增加抓取主题
+func (this *AbstractSpider) Load() {
+	if this.CaptionPath == "" {
+		return
+	}
+
+	rd, err := ioutil.ReadDir(this.CaptionPath)
+	if err != nil {
+
+		return
+	}
+	for _, fi := range rd {
+		if fi.IsDir() {
+
+		} else {
+			filename := this.CaptionPath + "/" + fi.Name()
+			c := Caption{}
+			c.Load(filename)
+			this.AddCaption(&c)
+		}
+	}
+
+}
+
+//移除抓取的主题（并不删除文件，只是不再此队列中)
+func (this *AbstractSpider) DelCaption(name string) {
+	if name != "" {
+		c := this.captionsMap[name]
+		if c != nil {
+			delete(this.captionsMap, name)
+			for index, c1 := range this.captions {
+				if c1 == c {
+					this.captions = append(this.captions[:index], this.captions[index+1:]...)
+					break
+				}
+			}
+		}
+	}
+}
+
+//增加抓取主题(加入队列中)
 func (this *AbstractSpider) AddCaption(c *Caption) {
 	if c != nil {
 		if this.captionsMap == nil {
@@ -60,7 +119,7 @@ func (this *AbstractSpider) Run() {
 	if len(this.captions) > 0 {
 		for _, caption := range this.captions {
 			this.GrabCaption(caption)
-			caption.Save()
+			caption.Save(this.CaptionPath)
 		}
 
 	}
