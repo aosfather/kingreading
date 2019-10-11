@@ -1,6 +1,13 @@
 package collect
 
-import "log"
+import (
+	"fmt"
+	"github.com/PuerkitoBio/goquery"
+	"golang.org/x/net/html"
+	"log"
+	"os"
+	"strings"
+)
 
 //无限小说抓取
 type WuxianSpider struct {
@@ -55,12 +62,34 @@ func (this *WuxianSpider) getCaptionUrl(name string) string {
 
 //返回章节列表
 func (this *WuxianSpider) grabIndex(url string) []string {
+	file, _ := os.Open(url)
+
+	root, _ := html.Parse(file)
+	doc := goquery.NewDocumentFromNode(root)
+	se := doc.Find("dl dd")
+	fmt.Println(len(se.Nodes))                      //总数
+	fmt.Println(se.First().Children().Attr("href")) //获取连接地址
+	fmt.Println(len(se.Nodes))
+	fmt.Println(se.Text())
 
 	return nil
 }
 
 //抓取内容
 func (this *WuxianSpider) grabContent(url string) bool {
+	file, _ := os.Open(url)
 
+	root, _ := html.Parse(file)
+	doc := goquery.NewDocumentFromNode(root)
+
+	se := doc.Find("td.line-content")
+	fmt.Println(se.Text())
+
+	root, _ = html.Parse(strings.NewReader(se.Text()))
+	doc2 := goquery.NewDocumentFromNode(root)
+	//标题
+	fmt.Println(doc2.Find("div.bookname h1").Text())
+	//内容
+	fmt.Println(doc2.Find("div#content").Text())
 	return false
 }
