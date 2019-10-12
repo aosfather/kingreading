@@ -3,11 +3,14 @@ package collect
 import (
 	"encoding/json"
 	"errors"
+	"github.com/PuerkitoBio/goquery"
 	"github.com/axgle/mahonia"
 	"golang.org/x/net/html"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
+	"strings"
 )
 
 //标题记录
@@ -145,6 +148,20 @@ func (this *AbstractSpider) GetCaptionByIndex(index int) *Caption {
 
 func (this *AbstractSpider) GetCaptionCount() int {
 	return len(this.captions)
+}
+
+//通过url获取内容，并将内容转换成goquery的document对象
+func (this *AbstractSpider) GetDocument(url string) *goquery.Document {
+	var root *html.Node
+	//判断url是否有http请求头
+	if strings.HasPrefix(url, "http://") || strings.HasPrefix(url, "https://") {
+		root, _ = this.GetUrl(url)
+	} else { //作为文件处理
+		file, _ := os.Open(url)
+		root, _ = html.Parse(file)
+	}
+
+	return goquery.NewDocumentFromNode(root)
 }
 
 //获取url的内容

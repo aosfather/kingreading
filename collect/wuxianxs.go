@@ -3,7 +3,7 @@ package collect
 import (
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
-	"golang.org/x/net/html"
+	"io"
 	"log"
 	"os"
 	"strings"
@@ -33,16 +33,23 @@ func (this *WuxianSpider) GrabCaption(c *Caption) {
 	//获取caption 对应的章节list
 	captions := this.grabIndex(c.Url)
 	currentIndex := len(captions) //最新章节的index
+	fmt.Println(captions)
+	fmt.Println(currentIndex)
 
 	//检查caption的index,是否已经更新
 	if c.Index <= 0 || c.Index < currentIndex {
 		index := c.Index
+		fmt.Println(index, "haha")
 
 		for index < currentIndex {
 			index++
 			indexUrl := captions[c.Index-1]
 			//抓取对应章节内容，更新index
-			if this.grabContent(indexUrl) {
+			if !strings.HasPrefix(indexUrl, "http://") {
+				indexUrl = c.Url + "/" + indexUrl
+			}
+
+			if this.grabContent(index, indexUrl) {
 				c.Index = index
 				c.IndexUrl = indexUrl
 			} else {
@@ -62,34 +69,40 @@ func (this *WuxianSpider) getCaptionUrl(name string) string {
 
 //返回章节列表
 func (this *WuxianSpider) grabIndex(url string) []string {
-	file, _ := os.Open(url)
-
-	root, _ := html.Parse(file)
-	doc := goquery.NewDocumentFromNode(root)
+	doc := this.GetDocument(url)
 	se := doc.Find("dl dd")
-	fmt.Println(len(se.Nodes))                      //总数
-	fmt.Println(se.First().Children().Attr("href")) //获取连接地址
-	fmt.Println(len(se.Nodes))
-	fmt.Println(se.Text())
+	//
+	//index:=se.First()
+	var urls []string
+	var href string
+	var exists bool
+	se.Each(func(index int, s *goquery.Selection) {
+		href, exists = s.Children().Attr("href")
+		if exists {
+			urls = append(urls, href)
+		}
 
-	return nil
+	})
+
+	return urls //总数
+
 }
 
 //抓取内容
-func (this *WuxianSpider) grabContent(url string) bool {
-	file, _ := os.Open(url)
+func (this *WuxianSpider) grabContent(index int, url string) bool {
+	doc2 := this.GetDocument(url)
+	if doc2 == nil {
+		return false
+	}
 
-	root, _ := html.Parse(file)
-	doc := goquery.NewDocumentFromNode(root)
-
-	se := doc.Find("td.line-content")
-	fmt.Println(se.Text())
-
-	root, _ = html.Parse(strings.NewReader(se.Text()))
-	doc2 := goquery.NewDocumentFromNode(root)
+	file, e := os.Create(fmt.Sprintf("%s/%d.txt", this.CaptionPath, index))
+	if e != nil {
+		log.Println("create file error!")
+		return false
+	}
 	//标题
-	fmt.Println(doc2.Find("div.bookname h1").Text())
-	//内容
-	fmt.Println(doc2.Find("div#content").Text())
-	return false
+	io.WriteString(file, doc2.Find("div.bookname h1").Text())
+	io.WriteString(file, doc2.Find("div#content").Text())
+	defer file.Close()
+	return true
 }

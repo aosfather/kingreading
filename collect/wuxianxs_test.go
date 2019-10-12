@@ -1,13 +1,32 @@
 package collect
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
 
-func TestWuxianSpider_GrabCaption(t *testing.T) {
+func TestWuxianSpider_GrabCaption1(t *testing.T) {
 	sp := WuxianSpider{}
-	sp.grabIndex("d:/D/index.html")
+	fmt.Println(sp.grabIndex("d:/D/index.html"))
 }
 
 func TestWuxianSpider_GrabCaption2(t *testing.T) {
 	sp := WuxianSpider{}
-	sp.grabContent("d:/D/3027586.html")
+	sp.grabContent(1, "d:/D/5380339.html")
+}
+
+func TestWuxianSpider_GrabCaptionFromUrl(t *testing.T) {
+	sp := WuxianSpider{}
+	sp.grabContent(1, "http://www.wuxianxs.com/ls10-10050/3026486.html")
+}
+
+func TestWuxianSpider_GrabCaption(t *testing.T) {
+	sp := WuxianSpider{}
+	sp.CaptionPath = "d:/D"
+	c := Caption{}
+
+	c.Index = 2432
+	c.Url = "d:/D/index.html"
+	c.Enabled = true
+	sp.GrabCaption(&c)
 }
