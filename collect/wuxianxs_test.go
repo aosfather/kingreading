@@ -25,8 +25,8 @@ func TestWuxianSpider_GrabCaption(t *testing.T) {
 	sp.CaptionPath = "d:/D"
 	c := Caption{}
 
-	c.Index = 2432
-	c.Url = "d:/D/index.html"
+	c.Index = 2436
+	c.Url = "http://www.wuxianxs.com/ls10-10050/"
 	c.Enabled = true
 	sp.GrabCaption(&c)
 }
