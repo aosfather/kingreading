@@ -20,12 +20,12 @@ type KindlePusher struct {
 }
 
 func (this *KindlePusher) Load(config map[string]string) {
-	this.host = config["host"]
-	this.account = config["account"]
-	this.accountpwd = config["pwd"] //解密
+	this.host = config["kindle.host"]
+	this.account = config["kindle.account"]
+	this.accountpwd = config["kindle.pwd"] //解密
 	this.port = 25
-	if config["port"] != "" {
-		p, e := strconv.Atoi(config["port"])
+	if config["kindle.port"] != "" {
+		p, e := strconv.Atoi(config["kindle.port"])
 		if e == nil {
 			this.port = p
 		}
