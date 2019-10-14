@@ -13,6 +13,13 @@ import (
 	"strings"
 )
 
+//标题管理库
+type CaptionManager interface {
+	GetCaption(name string) *Caption
+	//获取对应索引的文件名称
+	GetFileName(name string, index int) string
+}
+
 //标题记录
 type Caption struct {
 	Name    string //标题名称
