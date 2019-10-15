@@ -16,7 +16,7 @@ type KindlePusher struct {
 	host       string
 	account    string //mail 账户
 	accountpwd string //发送密码
-
+	client     *SmtpClient
 }
 
 func (this *KindlePusher) Load(config map[string]string) {
@@ -30,6 +30,12 @@ func (this *KindlePusher) Load(config map[string]string) {
 			this.port = p
 		}
 	}
+
+	this.client = &SmtpClient{}
+	this.client.Port = this.port
+	this.client.Host = this.host
+	this.client.User = this.account
+	this.client.Pwd = this.accountpwd
 
 }
 
@@ -85,6 +91,15 @@ func (this *KindlePusher) sendmail(to string, title string, body string, files .
 		title = "书"
 	}
 
-	SendMail(this.host, this.port, this.account, to, title, this.accountpwd, body, files...)
-	return true
+	msg := EmailMessage{}
+	msg.To = []string{to}
+	msg.From = this.account
+	msg.Subject = title
+	msg.Body = body
+	names := strings.Split(body, ";")
+	for index, f := range files {
+		msg.AddAttachment(Attachment{CT_TEXT, names[index], f})
+	}
+
+	return this.client.SendMessage(&msg)
 }

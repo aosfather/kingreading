@@ -12,6 +12,7 @@ import (
 	"time"
 )
 
+//内容类型：包括html\plain\
 type ContentType string
 
 func (this ContentType) ToString() string {
@@ -23,16 +24,22 @@ const (
 	CT_TEXT ContentType = "plain"
 )
 
+//smtp客户端，完成登录及发送邮件
 type SmtpClient struct {
 	Host string
 	User string
 	Pwd  string
 	Port int
+	auth smtp.Auth
 }
 
+//发送邮件
 func (this *SmtpClient) SendMessage(m *EmailMessage) bool {
-	auth := smtp.PlainAuth("", this.User, this.Pwd, this.Host)
-	e := smtp.SendMail(fmt.Sprintf("%s:%d", this.Host, this.Port), auth, m.From, m.To, m.ToByte())
+	if this.auth == nil {
+		this.auth = smtp.PlainAuth("", this.User, this.Pwd, this.Host)
+	}
+
+	e := smtp.SendMail(fmt.Sprintf("%s:%d", this.Host, this.Port), this.auth, m.From, m.To, m.ToByte())
 	if e != nil {
 		log.Println(e)
 		return false
@@ -40,22 +47,32 @@ func (this *SmtpClient) SendMessage(m *EmailMessage) bool {
 	return true
 }
 
+//邮件
 type EmailMessage struct {
 	Type    ContentType
-	Charset string //字符编码
-	From    string
-	To      []string //接收者
-	Subject string   //标题
-	Body    string   //邮件内容
-	attachs []Attachment
+	Charset string       //字符编码
+	From    string       //发件人
+	To      []string     //接收者
+	Cc      []string     //接收者
+	Bcc     []string     //接收者
+	Subject string       //标题
+	Body    string       //邮件内容
+	attachs []Attachment //附件
 }
 
+//构建邮件头
 func (this *EmailMessage) toHeader(boundary string) map[string]string {
 	Header := make(map[string]string)
 	Header["From"] = this.From
 	Header["To"] = strings.Join(this.To, ";")
-	//Header["Cc"] = strings.Join(message.cc, ";")
-	//Header["Bcc"] = strings.Join(message.bcc, ";")
+	if len(this.Cc) > 0 {
+		Header["Cc"] = strings.Join(this.Cc, ";") //抄送
+	}
+
+	if len(this.Bcc) > 0 {
+		Header["Bcc"] = strings.Join(this.Bcc, ";") //密送
+	}
+
 	Header["Subject"] = this.Subject
 	Header["Content-Type"] = "multipart/mixed;boundary=" + boundary
 	Header["Date"] = time.Now().String()
@@ -63,6 +80,7 @@ func (this *EmailMessage) toHeader(boundary string) map[string]string {
 
 }
 
+//增加附件
 func (this *EmailMessage) AddAttachment(a Attachment) {
 	if a.FileName != "" {
 		this.attachs = append(this.attachs, a)
@@ -70,9 +88,12 @@ func (this *EmailMessage) AddAttachment(a Attachment) {
 
 }
 
+//生成邮件发送格式体
 func (this *EmailMessage) ToByte() []byte {
 	buffer := bytes.NewBuffer(nil)
-	boundary := "GoBoundary"
+	//唯一标识
+	boundary := fmt.Sprintf("send4kindle_%d", time.Now().UnixNano())
+
 	//写header头 key：value的形式
 	headers := this.toHeader(boundary)
 	header := ""
@@ -88,17 +109,7 @@ func (this *EmailMessage) ToByte() []byte {
 	body += "Content-Type: text/html; charset=UTF-8 \r\n"
 
 	buffer.WriteString(body)
-	payload := make([]byte, base64.StdEncoding.EncodedLen(len(this.Body)))
-	base64.StdEncoding.Encode(payload, []byte(this.Body))
-
-	buffer.WriteString("\r\n")
-
-	for index, line := 0, len(payload); index < line; index++ {
-		buffer.WriteByte(payload[index])
-		if (index+1)%76 == 0 {
-			buffer.WriteString("\r\n")
-		}
-	}
+	writeAsBase64([]byte(this.Body), buffer)
 
 	//写附件
 	for _, a := range this.attachs {
@@ -108,18 +119,21 @@ func (this *EmailMessage) ToByte() []byte {
 	return buffer.Bytes()
 }
 
+//附件
 type Attachment struct {
-	Type     ContentType
-	Name     string
-	FileName string
+	Type     ContentType //类型
+	Name     string      //显示用的名称
+	FileName string      //真实文件地址
 }
 
+//写入附件的头及文件内容(使用base64)
 func (this *Attachment) Write(boundary string, buffer *bytes.Buffer) {
 	filename := mime.BEncoding.Encode("utf-8", this.Name)
 	attachment := "\r\n--" + boundary + "\r\n"
 	attachment += "Content-Disposition: attachment;filename=\"" + filename + "\"\r\n"
 	attachment += "Content-Transfer-Encoding:base64\r\n"
 	attachment += this.Type.ToString() + ";name=\"" + filename + "\"\r\n"
+	//内嵌用的语法
 	//attachment += "Content-ID: <" + this.Name + "> \r\n\r\n"
 	buffer.WriteString(attachment)
 	defer func() {
@@ -131,11 +145,19 @@ func (this *Attachment) Write(boundary string, buffer *bytes.Buffer) {
 	this.writeFile(buffer)
 
 }
+
+//写入附件文件内容，使用base64编码
 func (this *Attachment) writeFile(buffer *bytes.Buffer) {
 	file, err := ioutil.ReadFile(this.FileName)
 	if err != nil {
 		panic(err.Error())
 	}
+
+	writeAsBase64(file, buffer)
+}
+
+//将内容使用base64格式写入到buffer中
+func writeAsBase64(file []byte, buffer *bytes.Buffer) {
 	payload := make([]byte, base64.StdEncoding.EncodedLen(len(file)))
 	base64.StdEncoding.Encode(payload, file)
 	buffer.WriteString("\r\n")
@@ -145,4 +167,5 @@ func (this *Attachment) writeFile(buffer *bytes.Buffer) {
 			buffer.WriteString("\r\n")
 		}
 	}
+
 }
