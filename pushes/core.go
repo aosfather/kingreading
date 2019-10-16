@@ -1,13 +1,14 @@
 package pushes
 
 import (
+	"github.com/aosfather/bingo"
 	"github.com/aosfather/kingreading/profiles"
 	"log"
+	"strings"
 )
 
 //pusher 接口定义
 type Pusher interface {
-	Config(config map[string]string)
 	//执行推送
 	//推送内容标题，文件列表
 	Execute(p *profiles.Profile)
@@ -19,10 +20,12 @@ type PusherManager struct {
 	pushers  map[string]Pusher
 }
 
-func (this *PusherManager) Init() {
+func (this *PusherManager) Init(context *bingo.ApplicationContext) {
 	if this.pushers == nil {
 		this.pushers = make(map[string]Pusher)
 	}
+	this.catalogs = strings.Split(context.GetPropertyFromConfig("profile.catalog"), ",")
+	this.p = context.GetService("profiles").(profiles.ProfileManager)
 }
 
 //注册pusher处理器
@@ -44,26 +47,17 @@ func (this *PusherManager) Get(rt string) Pusher {
 	return this.pushers[rt]
 }
 
-var _pushers *PusherManager
-
-//设置发送者
-func SetPushers(p *PusherManager) {
-	_pushers = p
-}
-
 //推送定时job的处理函数
-func PushCronHandler() {
-	if _pushers == nil {
-		return
-	}
+func (this *PusherManager) PushCronHandler() {
+	log.Println("start push")
 	//循环profile,根据level，先处理level 低的。
-	for _, catalog := range _pushers.catalogs {
-		count := _pushers.p.GetProfileCount(catalog)
-
+	for _, catalog := range this.catalogs {
+		count := this.p.GetProfileCount(catalog)
+		log.Println("profile size=", count)
 		for i := 0; i < count; i++ {
-			p := _pushers.p.GetProfile(catalog, i)
+			p := this.p.GetProfile(catalog, i)
 			if p != nil {
-				pusher := _pushers.Get(p.RemoteType)
+				pusher := this.Get(p.RemoteType)
 				if pusher != nil {
 					pusher.Execute(p)
 				}

@@ -14,6 +14,10 @@ type WuxianSpider struct {
 	AbstractSpider
 }
 
+func (this *WuxianSpider) Run() {
+	this.AbstractSpider.Run(this.GrabCaption)
+}
+
 //抓取
 func (this *WuxianSpider) GrabCaption(c *Caption) {
 	if c == nil || c.Enabled == false {
@@ -39,7 +43,6 @@ func (this *WuxianSpider) GrabCaption(c *Caption) {
 	//检查caption的index,是否已经更新
 	if c.Index <= 0 || c.Index < currentIndex {
 		index := c.Index
-		fmt.Println(index, "haha")
 
 		for index < currentIndex {
 			index++
@@ -49,7 +52,7 @@ func (this *WuxianSpider) GrabCaption(c *Caption) {
 				indexUrl = c.Url + "/" + indexUrl
 			}
 
-			if this.grabContent(index, indexUrl) {
+			if this.grabContent(this.CaptionPath+"/"+c.Name, index, indexUrl) {
 				c.Index = index
 				c.IndexUrl = indexUrl
 			} else {
@@ -89,13 +92,13 @@ func (this *WuxianSpider) grabIndex(url string) []string {
 }
 
 //抓取内容
-func (this *WuxianSpider) grabContent(index int, url string) bool {
+func (this *WuxianSpider) grabContent(p string, index int, url string) bool {
 	doc2 := this.GetDocument(url)
 	if doc2 == nil {
 		return false
 	}
 
-	file, e := os.Create(fmt.Sprintf("%s/%d.txt", this.CaptionPath, index))
+	file, e := os.Create(fmt.Sprintf("%s/%d.txt", p, index))
 	if e != nil {
 		log.Println("create file error!")
 		return false

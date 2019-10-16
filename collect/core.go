@@ -29,6 +29,8 @@ type Caption struct {
 	//
 	Url      string //对应的url
 	IndexUrl string //索引对应的地址
+	Collect  string //收集者
+	Fix      string //文件后缀类型
 
 }
 
@@ -51,9 +53,12 @@ func (this *Caption) Load(filename string) {
 	}
 }
 
+type grapfunc func(c *Caption)
 type Collecter interface {
-	AddCaption(c *Caption) //增加抓取主题
-	Run()                  //执行抓取
+	AddCaption(c *Caption)           //增加抓取主题
+	GetCaption(name string) *Caption //获取主题
+	Run()                            //执行抓取
+	SetPath(p string)                //设置工作目录
 }
 
 //标准的爬虫
@@ -64,27 +69,8 @@ type AbstractSpider struct {
 	captionsMap map[string]*Caption
 }
 
-func (this *AbstractSpider) Load() {
-	if this.CaptionPath == "" {
-		return
-	}
-
-	rd, err := ioutil.ReadDir(this.CaptionPath)
-	if err != nil {
-
-		return
-	}
-	for _, fi := range rd {
-		if fi.IsDir() {
-
-		} else {
-			filename := this.CaptionPath + "/" + fi.Name()
-			c := Caption{}
-			c.Load(filename)
-			this.AddCaption(&c)
-		}
-	}
-
+func (this *AbstractSpider) SetPath(p string) {
+	this.CaptionPath = p
 }
 
 //移除抓取的主题（并不删除文件，只是不再此队列中)
@@ -119,20 +105,19 @@ func (this *AbstractSpider) AddCaption(c *Caption) {
 
 }
 
-//抓取
-func (this *AbstractSpider) GrabCaption(c *Caption) {
-
-}
-
 //执行抓取
-func (this *AbstractSpider) Run() {
-	if len(this.captions) > 0 {
+func (this *AbstractSpider) Run(f grapfunc) {
+	log.Println("run spider")
+	if len(this.captions) > 0 && f != nil {
+		log.Println("size >0")
 		for _, caption := range this.captions {
-			this.GrabCaption(caption)
+			f(caption)
 			caption.Save(this.CaptionPath)
 		}
 
 	}
+
+	log.Println("spider finished")
 
 }
 

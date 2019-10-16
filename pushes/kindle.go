@@ -1,6 +1,8 @@
 package pushes
 
 import (
+	"fmt"
+	"github.com/aosfather/bingo"
 	"github.com/aosfather/kingreading/collect"
 	"github.com/aosfather/kingreading/profiles"
 	"log"
@@ -19,13 +21,13 @@ type KindlePusher struct {
 	client     *SmtpClient
 }
 
-func (this *KindlePusher) Load(config map[string]string) {
-	this.host = config["kindle.host"]
-	this.account = config["kindle.account"]
-	this.accountpwd = config["kindle.pwd"] //解密
+func (this *KindlePusher) Load(config *bingo.ApplicationContext) {
+	this.host = config.GetPropertyFromConfig("kindle.host")
+	this.account = config.GetPropertyFromConfig("kindle.account")
+	this.accountpwd = config.GetPropertyFromConfig("kindle.pwd") //解密
 	this.port = 25
-	if config["kindle.port"] != "" {
-		p, e := strconv.Atoi(config["kindle.port"])
+	if config.GetPropertyFromConfig("kindle.port") != "" {
+		p, e := strconv.Atoi(config.GetPropertyFromConfig("kindle.port"))
 		if e == nil {
 			this.port = p
 		}
@@ -37,10 +39,16 @@ func (this *KindlePusher) Load(config map[string]string) {
 	this.client.User = this.account
 	this.client.Pwd = this.accountpwd
 
+	//注册到管理器中
+	pm := config.GetService("pushers").(*PusherManager)
+	pm.Add("kindle", this)
+	this.pm = config.GetService("profiles").(profiles.ProfileManager)
+	this.captions = config.GetService("collects").(collect.CaptionManager)
+
 }
 
 //推送
-func (this *KindlePusher) Push(profile *profiles.Profile) {
+func (this *KindlePusher) Execute(profile *profiles.Profile) {
 	// 检查是否有更新
 	if profile.OnTrigger() {
 		if this.captions == nil {
@@ -64,12 +72,15 @@ func (this *KindlePusher) Push(profile *profiles.Profile) {
 
 			//获取文件列表
 			var files []string
+			var body string
+
 			for i := 1; i <= max; i++ {
 				files = append(files, this.captions.GetFileName(caption.Name, profile.LastSendIndex+i))
+				body += fmt.Sprintf("%s_%d;", caption.Title, profile.LastSendIndex+i)
 			}
 
 			// 发送到目标地址
-			if this.sendmail(profile.GetProperty("EMAIL"), profile.Title, "", files...) {
+			if this.sendmail(profile.GetProperty("EMAIL"), profile.Title, body, files...) {
 				profile.LastSendIndex += max
 			}
 

@@ -24,7 +24,7 @@ const (
 
 //配置管理器
 type ProfileManager interface {
-	AddProfile(catalog string, p *Profile)
+	AddProfile(p *Profile)
 	Save(p *Profile)                               //持久化
 	GetProfile(catalog string, index int) *Profile //获取配置
 	GetProfileCount(catalog string) int            //获取配置的个数
@@ -32,6 +32,8 @@ type ProfileManager interface {
 
 //推送设置
 type Profile struct {
+	ID            string            //唯一标识
+	Catalog       string            //分类
 	RemoteType    string            //终端类型
 	Title         string            //内容标题
 	Caption       string            //内容标题名称，唯一ID
@@ -42,6 +44,10 @@ type Profile struct {
 	MaxLimit      int               //最大章节限制
 	LastSendIndex int               //最后推送的章节索引
 	ExtProperties map[string]string //扩展属性
+}
+
+func (this *Profile) Init() {
+	this.ExtProperties = make(map[string]string)
 }
 
 /**
