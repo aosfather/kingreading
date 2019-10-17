@@ -59,6 +59,9 @@ func (this *Profile) OnTrigger() bool {
 	now := time.Now()
 	switch this.Rate {
 	case RT_HOUR:
+		if this.LastMinutes < 0 {
+			return true
+		}
 		if now.Minute() == this.LastMinutes {
 			return true
 		}

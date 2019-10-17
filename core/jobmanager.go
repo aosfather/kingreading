@@ -1,9 +1,6 @@
 package core
 
-import (
-	"github.com/robfig/cron"
-	"log"
-)
+import "time"
 
 //任务handler 方法
 type JobHandler func()
@@ -17,11 +14,10 @@ type Job struct {
 
 type JobManager struct {
 	jobs     map[string]*Job
-	executer *cron.Cron
+	executer *JobExecuter
 }
 
 func (this *JobManager) Add(job *Job) {
-
 	if job != nil {
 		if this.jobs == nil {
 			this.jobs = make(map[string]*Job)
@@ -29,30 +25,22 @@ func (this *JobManager) Add(job *Job) {
 		this.jobs[job.Name] = job
 
 		if this.executer == nil {
-			this.executer = cron.New()
-
-			this.executer.Start()
+			this.executer = &JobExecuter{}
 		}
 
-		log.Println(this.executer.AddFunc(job.Cron, job.Handler))
+		this.executer.AddJob(job)
 
 	}
 }
 
-func (this *JobManager) Stop(jobname string) {
-	//if this.jobs != nil && jobname != "" {
-	//	job := this.jobs[jobname]
-	//	if job != nil {
-	//		this.executer.Remove(jobname)
-	//	}
-	//}
+func (this *JobManager) Stop() {
+	if this.executer != nil {
+		this.executer.Stop()
+	}
 }
 
-func (this *JobManager) Start(jobname string) {
-	//if this.jobs != nil && jobname != "" {
-	//	job := this.jobs[jobname]
-	//	if job != nil {
-	//		job.start()
-	//	}
-	//}
+func (this *JobManager) Start(m int64) {
+	if this.executer != nil {
+		this.executer.Start(time.Duration(m) * time.Minute)
+	}
 }
