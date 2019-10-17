@@ -70,24 +70,24 @@ func (this *Application) Onload(context *bingo.ApplicationContext) bool {
 	//推送定时任务
 	pjob := core.Job{}
 	pjob.Name = "kindlepusher"
-	pjob.Cron = "*/50 * * * ?"
+	pjob.Cron = "*/1 * * * ?"
 	pjob.Handler = pm.PushCronHandler
 	jm.Add(&pjob)
 
 	//加载profile
-	pone := profiles.Profile{}
-	pone.Init()
-	pone.Caption = "xs_wgsd"
-	pone.RemoteType = "kindle"
-	pone.LastSendIndex = 2437
-	pone.MaxLimit = 2
-	pone.Rate = profiles.RT_HOUR
-	pone.LastHour = 10
-	pone.LastMinutes = 56
-	pone.ExtProperties["EMAIL"] = "faye.feelcool@kindle.cn"
-	pone.Catalog = "0"
-	pone.ID = "user001"
-	profilesMan.AddProfile(&pone)
+	//pone := profiles.Profile{}
+	//pone.Init()
+	//pone.Caption = "xs_wgsd"
+	//pone.RemoteType = "kindle"
+	//pone.LastSendIndex = 2437
+	//pone.MaxLimit = 2
+	//pone.Rate = profiles.RT_HOUR
+	//pone.LastHour = 10
+	//pone.LastMinutes = 56
+	//pone.ExtProperties["EMAIL"] = "faye.feelcool@kindle.cn"
+	//pone.Catalog = "0"
+	//pone.ID = "user001"
+	//profilesMan.AddProfile(&pone)
 
 	log.Println("load fininshed")
 	return true

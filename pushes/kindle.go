@@ -76,16 +76,17 @@ func (this *KindlePusher) Execute(profile *profiles.Profile) {
 
 			for i := 1; i <= max; i++ {
 				files = append(files, this.captions.GetFileName(caption.Name, profile.LastSendIndex+i))
-				body += fmt.Sprintf("%s_%d;", caption.Title, profile.LastSendIndex+i)
+				body += fmt.Sprintf("%s_%d.%s;", caption.Title, profile.LastSendIndex+i, caption.Fix)
 			}
 
+			log.Println("kindle use send mail ")
 			// 发送到目标地址
 			if this.sendmail(profile.GetProperty("EMAIL"), profile.Title, body, files...) {
 				profile.LastSendIndex += max
+				log.Println("kindle  send mail success")
+				//保存
+				this.pm.Save(profile)
 			}
-
-			//保存
-			this.pm.Save(profile)
 
 		}
 

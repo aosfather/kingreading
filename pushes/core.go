@@ -57,8 +57,10 @@ func (this *PusherManager) PushCronHandler() {
 		for i := 0; i < count; i++ {
 			p := this.p.GetProfile(catalog, i)
 			if p != nil {
+				log.Println("process profile ", p.ID, p.RemoteType)
 				pusher := this.Get(p.RemoteType)
 				if pusher != nil {
+					log.Println("run pusher")
 					pusher.Execute(p)
 				}
 			}
