@@ -74,6 +74,7 @@ func (this *Application) Onload(context *bingo.ApplicationContext) bool {
 	pjob.Handler = pm.PushCronHandler
 	jm.Add(&pjob)
 
+	jm.Start(120)
 	//加载profile
 	//pone := profiles.Profile{}
 	//pone.Init()

@@ -44,7 +44,7 @@ func (this *WuxianSpider) GrabCaption(c *Caption) {
 	if c.Index <= 0 || c.Index < currentIndex {
 		index := c.Index
 
-		for index < currentIndex {
+		for index <= currentIndex {
 			index++
 			indexUrl := captions[c.Index-1]
 			//抓取对应章节内容，更新index
