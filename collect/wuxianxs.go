@@ -41,7 +41,7 @@ func (this *WuxianSpider) GrabCaption(c *Caption) {
 	fmt.Println(currentIndex)
 
 	//检查caption的index,是否已经更新
-	if c.Index <= 0 || c.Index < currentIndex {
+	if c.Index <= 0 || c.Index < (currentIndex+1) {
 		index := c.Index
 
 		for index <= currentIndex {
