@@ -32,6 +32,7 @@ type ProfileManager interface {
 
 //推送设置
 type Profile struct {
+	User          string            //用户标识
 	ID            string            //唯一标识
 	Catalog       string            //分类
 	RemoteType    string            //终端类型

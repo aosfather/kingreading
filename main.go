@@ -75,20 +75,6 @@ func (this *Application) Onload(context *bingo.ApplicationContext) bool {
 	jm.Add(&pjob)
 
 	jm.Start(120)
-	//加载profile
-	//pone := profiles.Profile{}
-	//pone.Init()
-	//pone.Caption = "xs_wgsd"
-	//pone.RemoteType = "kindle"
-	//pone.LastSendIndex = 2437
-	//pone.MaxLimit = 2
-	//pone.Rate = profiles.RT_HOUR
-	//pone.LastHour = 10
-	//pone.LastMinutes = 56
-	//pone.ExtProperties["EMAIL"] = "faye.feelcool@kindle.cn"
-	//pone.Catalog = "0"
-	//pone.ID = "user001"
-	//profilesMan.AddProfile(&pone)
 
 	log.Println("load fininshed")
 	return true
