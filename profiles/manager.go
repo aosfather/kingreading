@@ -1,7 +1,6 @@
 package profiles
 
 import (
-	"github.com/aosfather/bingo"
 	"io/ioutil"
 	"log"
 	"os"
@@ -9,22 +8,21 @@ import (
 
 //profiles manager implements
 type FileProfilesManager struct {
-	path     string
+	Path     string `Value:"profile.workpath"`
 	profiles map[string][]*Profile
 }
 
-func (this *FileProfilesManager) Init(context *bingo.ApplicationContext) {
-	this.path = context.GetPropertyFromConfig("profile.workpath")
+func (this *FileProfilesManager) Init() {
 	this.profiles = make(map[string][]*Profile)
 	this.load()
 }
 
 func (this *FileProfilesManager) load() {
-	if this.path == "" {
+	if this.Path == "" {
 		return
 	}
 
-	rd, err := ioutil.ReadDir(this.path)
+	rd, err := ioutil.ReadDir(this.Path)
 	if err != nil {
 
 		return
@@ -33,7 +31,7 @@ func (this *FileProfilesManager) load() {
 		if fi.IsDir() {
 
 		} else {
-			filename := this.path + "/" + fi.Name()
+			filename := this.Path + "/" + fi.Name()
 			p := Profile{}
 			f, e := os.Open(filename)
 			if e != nil {
@@ -61,8 +59,8 @@ func (this *FileProfilesManager) AddProfile(p *Profile) {
 
 //持久化
 func (this *FileProfilesManager) Save(p *Profile) {
-	if p != nil && this.path != "" {
-		f, e := os.Create(this.path + "/" + p.ID + ".pf")
+	if p != nil && this.Path != "" {
+		f, e := os.Create(this.Path + "/" + p.ID + ".pf")
 		if e == nil {
 			p.Save(f)
 			f.Close()

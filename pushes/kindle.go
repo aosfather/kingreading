@@ -3,6 +3,7 @@ package pushes
 import (
 	"fmt"
 	"github.com/aosfather/kingreading/collect"
+	"github.com/aosfather/kingreading/core"
 	"github.com/aosfather/kingreading/profiles"
 	"log"
 	"strconv"
@@ -14,11 +15,14 @@ type KindlePusher struct {
 	Pm         *PusherManager         `Inject:""`
 	Captions   collect.CaptionManager `Inject:""`
 	PortStr    string                 `Value:"kindle.port"`
+	Out        string                 `Value:"out.dir"`
+	Size       int                    `Value:"out.size"`
 	port       int
 	Host       string `Value:"kindle.host"`
 	Account    string `Value:"kindle.account"` //mail 账户
 	Accountpwd string `Value:"kindle.pwd"`     //发送密码
 	client     *SmtpClient
+	bagman     *core.TxtBagMan //打包文件
 }
 
 func (this *KindlePusher) Init() {
@@ -33,6 +37,12 @@ func (this *KindlePusher) Init() {
 	this.client = &SmtpClient{Port: this.port, Host: this.Host, User: this.Account, Pwd: this.Accountpwd}
 	//注册到管理器中
 	this.Pm.Add("kindle", this)
+	this.bagman = new(core.TxtBagMan)
+	if this.Size == 0 {
+		this.Size = 1
+	}
+	this.bagman.Size = this.Size
+	this.bagman.OutDir = this.Out
 
 }
 
@@ -65,12 +75,18 @@ func (this *KindlePusher) Execute(profile *profiles.Profile) {
 
 			for i := 1; i <= max; i++ {
 				files = append(files, this.Captions.GetFileName(caption.Name, profile.LastSendIndex+i))
-				body += fmt.Sprintf("%s_%d.%s;", caption.Title, profile.LastSendIndex+i, caption.Fix)
+
+			}
+			log.Println(files)
+			//打包
+			outfiles := this.bagman.MakeBag(files)
+			for _, fname := range outfiles {
+				body += fmt.Sprintf("%s_%s;", caption.Title, fname[strings.LastIndex(fname, "/"):])
 			}
 
 			log.Println("kindle use send mail ")
 			// 发送到目标地址
-			if this.sendmail(profile.GetProperty("EMAIL"), profile.Title, body, files...) {
+			if this.sendmail(profile.GetProperty("EMAIL"), profile.Title, body, outfiles...) {
 				profile.LastSendIndex += max
 				log.Println("kindle  send mail success")
 				//保存

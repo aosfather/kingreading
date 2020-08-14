@@ -43,6 +43,7 @@ type Profile struct {
 	LastMinutes   int               //最晚发出的分钟
 	EmptyEnabled  bool              //空内容是否也发送
 	MaxLimit      int               //最大章节限制
+	Size          int               //每次推送的大小，默认1
 	LastSendIndex int               //最后推送的章节索引
 	ExtProperties map[string]string //扩展属性
 	ProfileMan    ProfileManager
