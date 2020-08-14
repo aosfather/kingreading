@@ -2,7 +2,6 @@ package pushes
 
 import (
 	"fmt"
-	"github.com/aosfather/bingo"
 	"github.com/aosfather/kingreading/collect"
 	"github.com/aosfather/kingreading/profiles"
 	"log"
@@ -12,38 +11,28 @@ import (
 
 //kindle
 type KindlePusher struct {
-	pm         profiles.ProfileManager
-	captions   collect.CaptionManager
+	Pm         *PusherManager         `Inject:""`
+	Captions   collect.CaptionManager `Inject:""`
+	PortStr    string                 `Value:"kindle.port"`
 	port       int
-	host       string
-	account    string //mail 账户
-	accountpwd string //发送密码
+	Host       string `Value:"kindle.host"`
+	Account    string `Value:"kindle.account"` //mail 账户
+	Accountpwd string `Value:"kindle.pwd"`     //发送密码
 	client     *SmtpClient
 }
 
-func (this *KindlePusher) Load(config *bingo.ApplicationContext) {
-	this.host = config.GetPropertyFromConfig("kindle.host")
-	this.account = config.GetPropertyFromConfig("kindle.account")
-	this.accountpwd = config.GetPropertyFromConfig("kindle.pwd") //解密
+func (this *KindlePusher) Init() {
 	this.port = 25
-	if config.GetPropertyFromConfig("kindle.port") != "" {
-		p, e := strconv.Atoi(config.GetPropertyFromConfig("kindle.port"))
+	if this.PortStr != "" {
+		p, e := strconv.Atoi(this.PortStr)
 		if e == nil {
 			this.port = p
 		}
 	}
 
-	this.client = &SmtpClient{}
-	this.client.Port = this.port
-	this.client.Host = this.host
-	this.client.User = this.account
-	this.client.Pwd = this.accountpwd
-
+	this.client = &SmtpClient{Port: this.port, Host: this.Host, User: this.Account, Pwd: this.Accountpwd}
 	//注册到管理器中
-	pm := config.GetService("pushers").(*PusherManager)
-	pm.Add("kindle", this)
-	this.pm = config.GetService("profiles").(profiles.ProfileManager)
-	this.captions = config.GetService("collects").(collect.CaptionManager)
+	this.Pm.Add("kindle", this)
 
 }
 
@@ -51,12 +40,12 @@ func (this *KindlePusher) Load(config *bingo.ApplicationContext) {
 func (this *KindlePusher) Execute(profile *profiles.Profile) {
 	// 检查是否有更新
 	if profile.OnTrigger() {
-		if this.captions == nil {
+		if this.Captions == nil {
 			log.Println("caption manager is nil!")
 			return
 		}
 		//检查内容主题是否存在
-		caption := this.captions.GetCaption(profile.Caption)
+		caption := this.Captions.GetCaption(profile.Caption)
 		if caption == nil {
 			log.Println("caption is not exits! ", profile.Caption)
 			return
@@ -75,7 +64,7 @@ func (this *KindlePusher) Execute(profile *profiles.Profile) {
 			var body string
 
 			for i := 1; i <= max; i++ {
-				files = append(files, this.captions.GetFileName(caption.Name, profile.LastSendIndex+i))
+				files = append(files, this.Captions.GetFileName(caption.Name, profile.LastSendIndex+i))
 				body += fmt.Sprintf("%s_%d.%s;", caption.Title, profile.LastSendIndex+i, caption.Fix)
 			}
 
@@ -85,7 +74,7 @@ func (this *KindlePusher) Execute(profile *profiles.Profile) {
 				profile.LastSendIndex += max
 				log.Println("kindle  send mail success")
 				//保存
-				this.pm.Save(profile)
+				profile.ProfileMan.Save(profile)
 			}
 
 		}
@@ -105,7 +94,7 @@ func (this *KindlePusher) sendmail(to string, title string, body string, files .
 
 	msg := EmailMessage{}
 	msg.To = []string{to}
-	msg.From = this.account
+	msg.From = this.Account
 	msg.Subject = title
 	msg.Body = body
 	names := strings.Split(body, ";")

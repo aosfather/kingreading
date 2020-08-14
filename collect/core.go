@@ -108,6 +108,8 @@ func (this *AbstractSpider) AddCaption(c *Caption) {
 //执行抓取
 func (this *AbstractSpider) Run(f grapfunc) {
 	log.Println("run spider")
+	log.Println(this.CaptionPath)
+	log.Println(this.captions)
 	if len(this.captions) > 0 && f != nil {
 		log.Println("size >0")
 		for _, caption := range this.captions {

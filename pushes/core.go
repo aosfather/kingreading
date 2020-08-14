@@ -1,7 +1,6 @@
 package pushes
 
 import (
-	"github.com/aosfather/bingo"
 	"github.com/aosfather/kingreading/profiles"
 	"log"
 	"strings"
@@ -15,17 +14,17 @@ type Pusher interface {
 }
 
 type PusherManager struct {
-	catalogs []string
-	p        profiles.ProfileManager
-	pushers  map[string]Pusher
+	CatalogStr string `Value:"profile.catalog"`
+	catalogs   []string
+	P          profiles.ProfileManager `Inject:""`
+	pushers    map[string]Pusher
 }
 
-func (this *PusherManager) Init(context *bingo.ApplicationContext) {
+func (this *PusherManager) Init() {
 	if this.pushers == nil {
 		this.pushers = make(map[string]Pusher)
 	}
-	this.catalogs = strings.Split(context.GetPropertyFromConfig("profile.catalog"), ",")
-	this.p = context.GetService("profiles").(profiles.ProfileManager)
+	this.catalogs = strings.Split(this.CatalogStr, ",")
 }
 
 //注册pusher处理器
@@ -52,10 +51,10 @@ func (this *PusherManager) PushCronHandler() {
 	log.Println("start push")
 	//循环profile,根据level，先处理level 低的。
 	for _, catalog := range this.catalogs {
-		count := this.p.GetProfileCount(catalog)
+		count := this.P.GetProfileCount(catalog)
 		log.Println("profile size=", count)
 		for i := 0; i < count; i++ {
-			p := this.p.GetProfile(catalog, i)
+			p := this.P.GetProfile(catalog, i)
 			if p != nil {
 				log.Println("process profile ", p.ID, p.RemoteType)
 				pusher := this.Get(p.RemoteType)

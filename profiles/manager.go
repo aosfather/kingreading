@@ -52,6 +52,7 @@ func (this *FileProfilesManager) AddProfile(p *Profile) {
 		return
 	}
 	catalog := p.Catalog
+	p.ProfileMan = this
 	list := this.profiles[catalog]
 	list = append(list, p)
 	this.profiles[catalog] = list

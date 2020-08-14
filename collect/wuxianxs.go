@@ -11,7 +11,13 @@ import (
 
 //无限小说抓取
 type WuxianSpider struct {
+	Collecter *FileCollectManager `Inject:""`
 	AbstractSpider
+}
+
+func (this *WuxianSpider) Init() {
+	this.Collecter.AddCollecter("wuxianxs", this)
+	this.Collecter.Load()
 }
 
 func (this *WuxianSpider) Run() {
@@ -99,6 +105,7 @@ func (this *WuxianSpider) grabContent(p string, index int, url string) bool {
 	}
 
 	file, e := os.Create(fmt.Sprintf("%s/%d.txt", p, index))
+	log.Println("saveing the file:", file.Name())
 	if e != nil {
 		log.Println("create file error!")
 		return false
@@ -107,5 +114,6 @@ func (this *WuxianSpider) grabContent(p string, index int, url string) bool {
 	io.WriteString(file, doc2.Find("div.bookname h1").Text())
 	io.WriteString(file, doc2.Find("div#content").Text())
 	defer file.Close()
+	log.Println("saved the file:", file.Name())
 	return true
 }

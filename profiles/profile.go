@@ -45,6 +45,7 @@ type Profile struct {
 	MaxLimit      int               //最大章节限制
 	LastSendIndex int               //最后推送的章节索引
 	ExtProperties map[string]string //扩展属性
+	ProfileMan    ProfileManager
 }
 
 func (this *Profile) Init() {

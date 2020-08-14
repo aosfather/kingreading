@@ -2,18 +2,20 @@ package collect
 
 import (
 	"fmt"
-	"github.com/aosfather/bingo"
 	"io/ioutil"
 	"log"
 )
 
-type abstractCollectManager struct {
-	root       string
+type FileCollectManager struct {
+	Root       string `Value:"collect.workpath"`
 	collecters map[string]Collecter
 }
 
+func (this *FileCollectManager) Init() {
+}
+
 //注册收集器
-func (this *abstractCollectManager) AddCollecter(key string, c Collecter) {
+func (this *FileCollectManager) AddCollecter(key string, c Collecter) {
 	if key == "" || c == nil {
 		return
 	}
@@ -22,12 +24,12 @@ func (this *abstractCollectManager) AddCollecter(key string, c Collecter) {
 		this.collecters = make(map[string]Collecter)
 	}
 
-	c.SetPath(this.root)
+	c.SetPath(this.Root)
 	this.collecters[key] = c
 }
 
 //增加收集的主题
-func (this *abstractCollectManager) AddCaption(c *Caption) {
+func (this *FileCollectManager) AddCaption(c *Caption) {
 	if c == nil {
 		return
 	}
@@ -41,8 +43,8 @@ func (this *abstractCollectManager) AddCaption(c *Caption) {
 }
 
 //定时收集任务处理
-func (this *abstractCollectManager) JobHandle() {
-	log.Println("job be called")
+func (this *FileCollectManager) JobHandle() {
+	log.Println("collect job be called!")
 	if this.collecters != nil {
 		log.Println("start job")
 		//执行收集任务
@@ -55,32 +57,24 @@ func (this *abstractCollectManager) JobHandle() {
 	log.Println("job finished")
 }
 
-type FileCollectManager struct {
-	abstractCollectManager
-}
-
-func (this *FileCollectManager) Init(config *bingo.ApplicationContext) {
-	this.root = config.GetPropertyFromConfig("collect.workpath")
-	fmt.Println(this.root)
-}
-
 func (this *FileCollectManager) Load() {
-	if this.root == "" {
+	if this.Root == "" {
 		return
 	}
 
-	rd, err := ioutil.ReadDir(this.root)
+	rd, err := ioutil.ReadDir(this.Root)
 	if err != nil {
 
 		return
 	}
 	for _, fi := range rd {
 		if fi.IsDir() {
-
+			log.Println("ignore dir")
 		} else {
-			filename := this.root + "/" + fi.Name()
+			filename := this.Root + "/" + fi.Name()
 			c := Caption{}
 			c.Load(filename)
+			log.Println(c)
 			this.AddCaption(&c)
 		}
 	}
@@ -102,7 +96,7 @@ func (this *FileCollectManager) GetCaption(name string) *Caption {
 func (this *FileCollectManager) GetFileName(name string, index int) string {
 	c := this.GetCaption(name)
 	if c != nil {
-		return fmt.Sprintf("%s/%s/%d.%s", this.root, c.Name, index, c.Fix)
+		return fmt.Sprintf("%s/%s/%d.%s", this.Root, c.Name, index, c.Fix)
 	}
 	return ""
 }
