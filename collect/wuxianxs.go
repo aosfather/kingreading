@@ -105,11 +105,12 @@ func (this *WuxianSpider) grabContent(p string, index int, url string) bool {
 	}
 
 	file, e := os.Create(fmt.Sprintf("%s/%d.txt", p, index))
-	log.Println("saveing the file:", file.Name())
+
 	if e != nil {
 		log.Println("create file error!")
 		return false
 	}
+	log.Println("saveing the file:", file.Name())
 	//标题
 	io.WriteString(file, doc2.Find("div.bookname h1").Text())
 	io.WriteString(file, doc2.Find("div#content").Text())
